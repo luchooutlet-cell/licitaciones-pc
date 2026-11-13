@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="mb-0">📊 Dashboard</h4>
+  <form method="post" action="{{ url_for('enviar_alertas') }}">
+    <button class="btn btn-outline-danger">
+      <i class="bi bi-envelope-paper"></i> Probar Envío de Alertas (≤7 días)
+    </button>
+  </form>
+</div>
+
+<!-- Tarjetas de KPIs principales -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card bg-primary text-white h-100">
+      <div class="card-body">
+        <h6 class="card-subtitle mb-2 opacity-75">Total licitaciones</h6>
+        <h2 class="mb-0">{{ total_licitaciones }}</h2>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-success text-white h-100">
+      <div class="card-body">
+        <h6 class="card-subtitle mb-2 opacity-75">Adjudicadas</h6>
+        <h2 class="mb-0">{{ total_adjudicadas }}</h2>
+        <small class="opacity-75">Tasa: {{ tasa_adjudicacion }}%</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-warning text-dark h-100">
+      <div class="card-body">
+        <h6 class="card-subtitle mb-2 opacity-75">En proceso</h6>
+        <h2 class="mb-0">{{ total_en_proceso }}</h2>
+        <small class="opacity-75">Análisis, prep. o enviadas</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-danger text-white h-100">
+      <div class="card-body">
+        <h6 class="card-subtitle mb-2 opacity-75">Cierran en ≤ 7 días</h6>
+        <h2 class="mb-0">{{ cierres_proximos }}</h2>
+        <small class="opacity-75">Requieren atención</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- KPIs económicos -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <h6 class="text-muted">Monto total ofertado</h6>
+        <h3 class="mb-0">USD {{ '{:,.0f}'.format(monto_total_ofertado) }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <h6 class="text-muted">Monto total adjudicado</h6>
+        <h3 class="mb-0 text-success">USD {{ '{:,.0f}'.format(monto_total_adjudicado) }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <h6 class="text-muted">Ticket promedio ofertado</h6>
+        <h3 class="mb-0">USD {{ '{:,.0f}'.format(ticket_promedio) }}</h3>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Por estado -->
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">Licitaciones por estado</div>
+      <div class="card-body">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Estado</th><th class="text-end">Cantidad</th></tr></thead>
+          <tbody>
+          {% for e in por_estado %}
+            <tr>
+              <td><span class="badge bg-info text-dark">{{ e.estado }}</span></td>
+              <td class="text-end"><strong>{{ e.cantidad }}</strong></td>
+            </tr>
+          {% else %}
+            <tr><td colspan="2" class="text-muted">Sin datos</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top clientes -->
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">Top clientes (por cantidad)</div>
+      <div class="card-body">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Cliente</th><th class="text-end">Cant.</th><th class="text-end">Monto ofertado</th></tr></thead>
+          <tbody>
+          {% for c in top_clientes %}
+            <tr>
+              <td>{{ c.cliente }}</td>
+              <td class="text-end"><strong>{{ c.cantidad }}</strong></td>
+              <td class="text-end">USD {{ '{:,.0f}'.format(c.monto or 0) }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="3" class="text-muted">Sin datos</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Por tipo de servicio -->
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">Licitaciones por tipo de servicio</div>
+      <div class="card-body">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Tipo</th><th class="text-end">Cantidad</th></tr></thead>
+          <tbody>
+          {% for t in por_tipo %}
+            <tr>
+              <td><small>{{ t.tipo_servicio or '(sin tipo)' }}</small></td>
+              <td class="text-end"><strong>{{ t.cantidad }}</strong></td>
+            </tr>
+          {% else %}
+            <tr><td colspan="2" class="text-muted">Sin datos</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Próximos cierres -->
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">Próximos cierres (≤ 15 días)</div>
+      <div class="card-body">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Cierre</th><th>Cliente</th><th class="text-end">Días</th></tr></thead>
+          <tbody>
+          {% for l in proximos_cierres %}
+            <tr>
+              <td><small><a href="{{ url_for('detalle', id=l.id) }}">{{ l.fecha_cierre }}</a></small></td>
+              <td><small>{{ l.cliente }}</small></td>
+              <td class="text-end">
+                {% if l.dias_para_cierre <= 5 %}
+                  <span class="badge bg-danger">{{ l.dias_para_cierre }}d</span>
+                {% else %}
+                  <span class="badge bg-warning text-dark">{{ l.dias_para_cierre }}d</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="3" class="text-muted">Sin cierres próximos</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

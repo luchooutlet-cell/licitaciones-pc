@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block content %}
+<form class="row g-2 mb-3">
+  <div class="col-md-4">
+    <input name="q" value="{{q}}" class="form-control" placeholder="Buscar cliente, nro, yacimiento...">
+  </div>
+  <div class="col-md-3">
+    <select name="estado" class="form-select">
+      <option value="">Todos los estados</option>
+      {% for e in estados %}<option {% if e==estado_sel %}selected{% endif %}>{{e}}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <select name="tipo" class="form-select">
+      <option value="">Todos los tipos</option>
+      {% for t in tipos %}<option {% if t==tipo_sel %}selected{% endif %}>{{t}}</option>{% endfor %}
+    </select>
+  </div>
+   <div class="col-md-2"><button class="btn btn-primary w-100">Filtrar</button></div>
+  <div class="col-md-12 mt-2 text-end">
+    <a href="{{ url_for('exportar_excel', q=q, estado=estado_sel, tipo=tipo_sel) }}"
+       class="btn btn-success btn-sm">
+      <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+    </a>
+  </div>
+</form>
+
+<div class="table-responsive">
+<table class="table table-hover bg-white align-middle">
+  <thead class="table-dark">
+    <tr>
+      <th>Nro / Código</th><th>Cliente</th><th>Yacimiento</th>
+      <th>Tipo servicio</th><th>Cierre</th><th>Días</th>
+      <th>Estado</th><th>Oferta</th><th></th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for l in licitaciones %}
+    <tr>
+      <td><a href="{{url_for('detalle', id=l.id)}}">{{l.nro_licitacion or l.codigo_interno or l.id}}</a></td>
+      <td>{{l.cliente}}</td>
+      <td>{{l.yacimiento or '-'}}</td>
+      <td><small>{{l.tipo_servicio or '-'}}</small></td>
+      <td>{{l.fecha_cierre or '-'}}</td>
+      <td>
+        {% if l.dias_para_cierre is not none %}
+          {% if l.dias_para_cierre < 0 %}<span class="badge bg-secondary">Vencida</span>
+          {% elif l.dias_para_cierre <= 5 %}<span class="badge bg-danger">{{l.dias_para_cierre}}d</span>
+          {% elif l.dias_para_cierre <= 15 %}<span class="badge bg-warning text-dark">{{l.dias_para_cierre}}d</span>
+          {% else %}<span class="badge bg-success">{{l.dias_para_cierre}}d</span>{% endif %}
+        {% endif %}
+      </td>
+      <td><span class="badge bg-info text-dark">{{l.estado}}</span></td>
+      <td>{{l.moneda}} {{ '%.2f'|format(l.nuestra_oferta) if l.nuestra_oferta else '-' }}</td>
+      <td>
+        <a href="{{url_for('form', id=l.id)}}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="9" class="text-center text-muted py-4">Sin licitaciones cargadas</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

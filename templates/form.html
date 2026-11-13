@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block content %}
+<h4>{{ 'Editar' if lic.id else 'Nueva' }} licitación</h4>
+<form method="post" class="row g-3 bg-white p-4 rounded shadow-sm">
+
+  <h6 class="text-primary mt-2">Identificación</h6>
+  <div class="col-md-3"><label>Código interno</label><input name="codigo_interno" value="{{lic.codigo_interno or ''}}" class="form-control"></div>
+  <div class="col-md-3"><label>N° licitación</label><input name="nro_licitacion" value="{{lic.nro_licitacion or ''}}" class="form-control"></div>
+  <div class="col-md-3"><label>Cliente *</label><input name="cliente" required value="{{lic.cliente or ''}}" class="form-control"></div>
+  <div class="col-md-3"><label>Yacimiento / Área</label><input name="yacimiento" value="{{lic.yacimiento or ''}}" class="form-control"></div>
+  <div class="col-md-3"><label>Provincia</label><input name="provincia" value="{{lic.provincia or ''}}" class="form-control"></div>
+  <div class="col-md-3"><label>Estado</label>
+    <select name="estado" class="form-select">
+      {% for e in estados %}<option {% if e==lic.estado %}selected{% endif %}>{{e}}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3"><label>Tipo de servicio</label>
+    <select name="tipo_servicio" class="form-select">
+      <option value="">--</option>
+      {% for t in tipos %}<option {% if t==lic.tipo_servicio %}selected{% endif %}>{{t}}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3"><label>Modalidad</label><input name="modalidad" value="{{lic.modalidad or ''}}" class="form-control"></div>
+
+  <h6 class="text-primary mt-4">Fechas</h6>
+  <div class="col-md-2"><label>Publicación</label><input type="date" name="fecha_publicacion" value="{{lic.fecha_publicacion or ''}}" class="form-control"></div>
+  <div class="col-md-2"><label>Apertura</label><input type="date" name="fecha_apertura" value="{{lic.fecha_apertura or ''}}" class="form-control"></div>
+  <div class="col-md-2"><label>Cierre</label><input type="date" name="fecha_cierre" value="{{lic.fecha_cierre or ''}}" class="form-control"></div>
+  <div class="col-md-2"><label>Adjudicación</label><input type="date" name="fecha_adjudicacion" value="{{lic.fecha_adjudicacion or ''}}" class="form-control"></div>
+  <div class="col-md-2"><label>Límite consultas</label><input type="date" name="fecha_consultas" value="{{lic.fecha_consultas or ''}}" class="form-control"></div>
+  <div class="col-md-2"><label>Plazo ejecución</label><input name="plazo_ejecucion" value="{{lic.plazo_ejecucion or ''}}" class="form-control"></div>
+
+  <h6 class="text-primary mt-4">Económico</h6>
+  <div class="col-md-2"><label>Moneda</label>
+    <select name="moneda" class="form-select">
+      {% for m in monedas %}<option {% if m==lic.moneda %}selected{% endif %}>{{m}}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3"><label>Presupuesto oficial</label><input type="number" step="0.01" name="presupuesto_oficial" value="{{lic.presupuesto_oficial or ''}}" class="form-control"></div>
+  <div class="col-md-3"><label>Nuestra oferta</label><input type="number" step="0.01" name="nuestra_oferta" value="{{lic.nuestra_oferta or ''}}" class="form-control"></div>
+  <div class="col-md-3"><label>Monto adjudicado</label><input type="number" step="0.01" name="monto_adjudicado" value="{{lic.monto_adjudicado or ''}}" class="form-control"></div>
+  <div class="col-md-4"><label>Cláusula de ajuste</label><input name="clausula_ajuste" value="{{lic.clausula_ajuste or ''}}" class="form-control" placeholder="CAC / IPC / Dólar / Sin ajuste"></div>
+  <div class="col-md-8"><label>Fórmula de ajuste</label><input name="formula_ajuste" value="{{lic.formula_ajuste or ''}}" class="form-control"></div>
+  <div class="col-md-6"><label>Forma de pago</label><input name="forma_pago" value="{{lic.forma_pago or ''}}" class="form-control" placeholder="30 días FF, anticipo 20%..."></div>
+  <div class="col-md-3"><label>Garantía oferta</label><input name="garantia_oferta" value="{{lic.garantia_oferta or ''}}" class="form-control"></div>
+  <div class="col-md-3"><label>Garantía cumplimiento</label><input name="garantia_cumplimiento" value="{{lic.garantia_cumplimiento or ''}}" class="form-control"></div>
+
+  <h6 class="text-primary mt-4">Técnico</h6>
+  <div class="col-md-6"><label>Servicios incluidos</label><textarea name="servicios_incluidos" rows="2" class="form-control">{{lic.servicios_incluidos or ''}}</textarea></div>
+  <div class="col-md-6"><label>Equipos requeridos</label><textarea name="equipos_requeridos" rows="2" class="form-control">{{lic.equipos_requeridos or ''}}</textarea></div>
+  <div class="col-md-6"><label>Normativa</label><input name="normativa" value="{{lic.normativa or ''}}" class="form-control" placeholder="NACE SP0169, ISO 15589..."></div>
+  <div class="col-md-6"><label>Subcontratos previstos</label><input name="subcontratos" value="{{lic.subcontratos or ''}}" class="form-control"></div>  <div class="col-12 mt-3 mb-2"><h6 class="text-secondary">Datos específicos de Protección Catódica</h6></div>
+  
+  <div class="col-md-2">
+    <label>Km de ducto</label>
+    <input type="number" step="0.01" name="km_ducto" value="{{lic.km_ducto or ''}}" class="form-control" placeholder="Ej: 45.5">
+  </div>
+  <div class="col-md-3">
+    <label>Tipo recubrimiento</label>
+    <select name="tipo_recubrimiento" class="form-select">
+      <option value="">--</option>
+      {% for tr in ['FBE', '3LPE', 'Asfalto', 'Cinta', 'Sin recubrimiento'] %}
+        <option {% if tr==lic.tipo_recubrimiento %}selected{% endif %}>{{tr}}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2">
+    <label>Cant. pozos</label>
+    <input type="number" name="cantidad_pozos" value="{{lic.cantidad_pozos or ''}}" class="form-control" placeholder="Ej: 12">
+  </div>
+  <div class="col-md-2">
+    <label>Resistividad (Ohm·m)</label>
+    <input type="number" step="0.1" name="resistividad_suelo" value="{{lic.resistividad_suelo or ''}}" class="form-control" placeholder="Ej: 1500">
+  </div>
+  <div class="col-md-3">
+    <label>Sistema PC</label>
+    <select name="sistema_pc" class="form-select">
+      <option value="">--</option>
+      {% for sp in ['Corriente impresa', 'Ánodos galvánicos', 'Mixto'] %}
+        <option {% if sp==lic.sistema_pc %}selected{% endif %}>{{sp}}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="col-md-3">
+    <label>Potencial ON (mV)</label>
+    <input type="number" step="0.1" name="potencial_on" value="{{lic.potencial_on or ''}}" class="form-control" placeholder="Ej: -850">
+  </div>
+  <div class="col-md-3">
+    <label>Potencial OFF (mV)</label>
+    <input type="number" step="0.1" name="potencial_off" value="{{lic.potencial_off or ''}}" class="form-control" placeholder="Ej: -780">
+  </div>
+  <div class="col-md-3">
+    <label>Vida útil ánodo (años)</label>
+    <input type="number" name="vida_util_anodo" value="{{lic.vida_util_anodo or ''}}" class="form-control" placeholder="Ej: 20">
+  </div>
+  <div class="col-12"><label>Descripción / Alcance</label><textarea name="descripcion" rows="3" class="form-control">{{lic.descripcion or ''}}</textarea></div>
+
+  <h6 class="text-primary mt-4">Comercial y seguimiento</h6>
+  <div class="col-md-4"><label>Contacto cliente</label><input name="contacto_cliente" value="{{lic.contacto_cliente or ''}}" class="form-control"></div>
+  <div class="col-md-4"><label>Email</label><input name="email_contacto" value="{{lic.email_contacto or ''}}" class="form-control"></div>
+  <div class="col-md-4"><label>Teléfono</label><input name="tel_contacto" value="{{lic.tel_contacto or ''}}" class="form-control"></div>
+  <div class="col-md-6"><label>Competidores identificados</label><textarea name="competidores" rows="2" class="form-control">{{lic.competidores or ''}}</textarea></div>
+  <div class="col-md-6"><label>Documentación entregada</label><textarea name="documentacion_entregada" rows="2" class="form-control">{{lic.documentacion_entregada or ''}}</textarea></div>
+  <div class="col-12"><label>Notas / Observaciones</label><textarea name="notas" rows="3" class="form-control">{{lic.notas or ''}}</textarea></div>
+
+  <div class="col-12 mt-3">
+    <button class="btn btn-primary"><i class="bi bi-save"></i> Guardar</button>
+    <a href="{{url_for('index')}}" class="btn btn-secondary">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

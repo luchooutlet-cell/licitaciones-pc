@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center mt-5">
+  <div class="col-md-5 col-lg-4">
+    <div class="card shadow border-0">
+      <div class="card-header bg-dark text-white text-center py-3">
+        <h4 class="mb-0"><i class="bi bi-lock-fill"></i> Iniciar Sesión</h4>
+      </div>
+      <div class="card-body p-4">
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label fw-bold">Usuario</label>
+            <input type="text" name="username" class="form-control form-control-lg" required autofocus placeholder="Ej: admin">
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-bold">Contraseña</label>
+            <input type="password" name="password" class="form-control form-control-lg" required placeholder="********">
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg w-100">Ingresar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

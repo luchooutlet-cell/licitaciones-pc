@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <h4>{{lic.nro_licitacion or lic.codigo_interno or 'Licitación #' ~ lic.id}} · {{lic.cliente}}</h4>
+  <div>
+    <a href="{{url_for('form', id=lic.id)}}" class="btn btn-outline-primary btn-sm">Editar</a>
+    <form method="post" action="{{url_for('eliminar', id=lic.id)}}" class="d-inline"
+          onsubmit="return confirm('¿Eliminar esta licitación?')">
+      <button class="btn btn-outline-danger btn-sm">Eliminar</button>
+    </form>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card"><div class="card-header">General</div><div class="card-body">
+      <p><b>Estado:</b> <span class="badge bg-info text-dark">{{lic.estado}}</span></p>
+      <p><b>Tipo servicio:</b> {{lic.tipo_servicio or '-'}}</p>
+      <p><b>Yacimiento:</b> {{lic.yacimiento or '-'}} ({{lic.provincia or '-'}})</p>
+      <p><b>Modalidad:</b> {{lic.modalidad or '-'}} · <b>Plazo:</b> {{lic.plazo_ejecucion or '-'}}</p>
+      <p><b>Cierre:</b> {{lic.fecha_cierre or '-'}}
+        {% if lic.dias_para_cierre is not none %} ({{lic.dias_para_cierre}} días){% endif %}</p>
+    </div></div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card"><div class="card-header">Económico</div><div class="card-body">
+      <p><b>Moneda:</b> {{lic.moneda}}</p>
+      <p><b>Presupuesto oficial:</b> {{lic.presupuesto_oficial or '-'}}</p>
+      <p><b>Nuestra oferta:</b> {{lic.nuestra_oferta or '-'}}</p>
+      <p><b>Monto adjudicado:</b> {{lic.monto_adjudicado or '-'}}</p>
+      <p><b>Cláusula ajuste:</b> {{lic.clausula_ajuste or '-'}}</p>
+      <p><b>Forma de pago:</b> {{lic.forma_pago or '-'}}</p>
+    </div></div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card"><div class="card-header">Técnico</div><div class="card-body">
+      <p><b>Servicios incluidos:</b><br>{{lic.servicios_incluidos or '-'}}</p>
+      <p><b>Equipos:</b><br>{{lic.equipos_requeridos or '-'}}</p>
+      <p><b>Normativa:</b> {{lic.normativa or '-'}}</p>
+      <p><b>Subcontratos:</b> {{lic.subcontratos or '-'}}</p>
+            <hr>
+      <h6 class="text-secondary">Protección Catódica:</h6>
+      <p><b>Km de ducto:</b> {{ lic.km_ducto or '-' }} · <b>Recubrimiento:</b> {{ lic.tipo_recubrimiento or '-' }}</p>
+      <p><b>Cant. pozos:</b> {{ lic.cantidad_pozos or '-' }} · <b>Sistema:</b> {{ lic.sistema_pc or '-' }}</p>
+      <p><b>Resistividad suelo:</b> {{ lic.resistividad_suelo or '-' }} Ohm·m</p>
+      <p><b>Potencial ON:</b> {{ lic.potencial_on or '-' }} mV · <b>Potencial OFF:</b> {{ lic.potencial_off or '-' }} mV</p>
+      <p><b>Vida útil ánodo:</b> {{ lic.vida_util_anodo or '-' }} años</p>
+    </div></div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card"><div class="card-header">Comercial</div><div class="card-body">
+      <p><b>Contacto:</b> {{lic.contacto_cliente or '-'}}</p>
+      <p><b>Email:</b> {{lic.email_contacto or '-'}}</p>
+      <p><b>Tel:</b> {{lic.tel_contacto or '-'}}</p>
+      <p><b>Garantía oferta:</b> {{lic.garantia_oferta or '-'}}</p>
+      <p><b>Garantía cumplimiento:</b> {{lic.garantia_cumplimiento or '-'}}</p>
+    </div></div>
+  </div>
+
+  <div class="col-12">
+    <div class="card"><div class="card-header">Descripción y notas</div><div class="card-body">
+      <p>{{lic.descripcion or '-'}}</p>
+      <hr>
+      <p><b>Competidores:</b> {{lic.competidores or '-'}}</p>
+      <p><b>Documentación entregada:</b> {{lic.documentacion_entregada or '-'}}</p>
+      <p><b>Notas:</b> {{lic.notas or '-'}}</p>
+    </div></div>
+  </div>
+
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">📎 Adjuntos ({{ lic.adjuntos|length }})</div>
+      <div class="card-body">
+
+        <form method="post" action="{{ url_for('adjuntar', id=lic.id) }}"
+              enctype="multipart/form-data" class="row g-2 mb-3">
+          <div class="col-md-5">
+            <input type="file" name="archivo" class="form-control" required>
+          </div>
+          <div class="col-md-4">
+            <input type="text" name="descripcion" class="form-control"
+                   placeholder="Descripción (opcional)">
+          </div>
+          <div class="col-md-3">
+            <button class="btn btn-primary w-100">
+              <i class="bi bi-upload"></i> Subir archivo
+            </button>
+          </div>
+        </form>
+
+        {% if lic.adjuntos %}
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Archivo</th><th>Descripción</th><th>Tamaño</th>
+              <th>Subido</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for a in lic.adjuntos %}
+            <tr>
+              <td>
+                <a href="{{ url_for('descargar_adjunto', id=a.id) }}">
+                  <i class="bi bi-file-earmark-arrow-down"></i> {{ a.nombre_original }}
+                </a>
+              </td>
+              <td><small>{{ a.descripcion or '-' }}</small></td>
+              <td><small>{{ '%.1f'|format(a.tamano_bytes / 1024) }} KB</small></td>
+              <td><small>{{ a.subido_en.strftime('%Y-%m-%d %H:%M') }}</small></td>
+              <td>
+                <form method="post" action="{{ url_for('eliminar_adjunto', id=a.id) }}"
+                      class="d-inline" onsubmit="return confirm('¿Eliminar este adjunto?')">
+                  <button class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted mb-0">Sin adjuntos todavía.</p>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
