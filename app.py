@@ -488,8 +488,8 @@ if __name__ == "__main__":
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
-# Forzar el uso del driver psycopg2 si es una URL de PostgreSQL
-if db_url.startswith("postgresql://") and "+psycopg2" not in db_url:
-    db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+db_url = os.environ.get("DATABASE_URL", "sqlite:///licitaciones.db")
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = db_url
