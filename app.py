@@ -490,6 +490,6 @@ if db_url.startswith("postgres://"):
 
 # Forzar el uso del driver psycopg2 si es una URL de PostgreSQL
 if db_url.startswith("postgresql://") and "+psycopg2" not in db_url:
-    db_url = db_url.replace("postgresql://", "postgresql+psycopg://", 1)
+db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = db_url
