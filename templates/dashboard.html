@@ -2,16 +2,18 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h4 class="mb-0">📊 Dashboard</h4>
-  <form method="post" action="{{ url_for('enviar_alertas') }}">
-    <button class="btn btn-outline-danger">
-      <i class="bi bi-envelope-paper"></i> Probar Envío de Alertas (≤7 días)
-      <form method="post" action="{{ url_for('cargar_pruebas') }}" class="d-inline me-2">
-    <button class="btn btn-outline-primary">
-      <i class="bi bi-database-add"></i> Cargar Datos de Prueba
-    </button>
-</form>
-    </button>
-  </form>
+  <div class="d-flex gap-2">
+    <form method="post" action="{{ url_for('cargar_pruebas') }}">
+      <button class="btn btn-primary" type="submit">
+        <i class="bi bi-database-add"></i> Cargar Datos de Prueba
+      </button>
+    </form>
+    <form method="post" action="{{ url_for('enviar_alertas') }}">
+      <button class="btn btn-outline-danger" type="submit">
+        <i class="bi bi-envelope-paper"></i> Probar Envío de Alertas (≤7 días)
+      </button>
+    </form>
+  </div>
 </div>
 
 <!-- Tarjetas de KPIs principales -->
