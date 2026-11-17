@@ -122,10 +122,13 @@ class Historial(db.Model):
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
 
     licitacion = db.relationship("Licitacion", backref=db.backref("historial", cascade="all, delete-orphan", order_by="Historial.fecha.desc()"))
-    class TipoServicio(db.Model):
+
+
+class TipoServicio(db.Model):
     __tablename__ = "tipos_servicio"
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(150), unique=True, nullable=False)
+
 
 class EstadoLicitacion(db.Model):
     __tablename__ = "estados_licitacion"
