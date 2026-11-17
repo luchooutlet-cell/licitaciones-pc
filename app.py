@@ -8,7 +8,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, sen
 from werkzeug.utils import secure_filename
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from sqlalchemy import func
-from models import db, Licitacion, Adjunto, Usuario, Historial
+from models import db, Licitacion, Adjunto, Usuario, Historial, TipoServicio, EstadoLicitacion
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "cambiar-esta-clave-mas-adelante"
@@ -60,17 +60,32 @@ with app.app_context():
         db.session.commit()
         print("✅ Usuario 'admin' creado automáticamente.")
 
-# --- LISTAS PARA DESPLEGABLES ---
-TIPOS_SERVICIO = [
-    "Relevamiento e ingeniería de PC", "Instalación corriente impresa",
-    "Instalación ánodos galvánicos", "Rehabilitación lechos de ánodos",
-    "Medición CIPS / DCVG / PCM", "Mantenimiento de sistemas",
-    "Instalación rectificadores / TRUs", "Monitoreo remoto",
-    "Evaluación de interferencias", "Diseño PC ductos nuevos",
-    "Puesta en marcha", "Capacitación técnica",
-]
-ESTADOS = ["En análisis", "Preparando oferta", "Enviada", "Adjudicada", "Perdida", "Desierta"]
+# --- FUNCIONES AUXILIARES PARA LISTAS DINÁMICAS ---
 MONEDAS = ["USD", "ARS", "EUR"]
+
+def obtener_tipos():
+    tipos = TipoServicio.query.order_by(TipoServicio.nombre).all()
+    if not tipos:
+        defaults = ["Relevamiento e ingeniería de PC", "Instalación corriente impresa", "Instalación ánodos galvánicos", 
+                    "Rehabilitación lechos de ánodos", "Medición CIPS / DCVG / PCM", "Mantenimiento de sistemas", 
+                    "Instalación rectificadores / TRUs", "Monitoreo remoto", "Evaluación de interferencias", 
+                    "Diseño PC ductos nuevos", "Puesta en marcha", "Capacitación técnica"]
+        for d in defaults:
+            db.session.add(TipoServicio(nombre=d))
+        db.session.commit()
+        tipos = TipoServicio.query.order_by(TipoServicio.nombre).all()
+    return [t.nombre for t in tipos]
+
+def obtener_estados():
+    estados = EstadoLicitacion.query.order_by(EstadoLicitacion.nombre).all()
+    if not estados:
+        defaults = ["En análisis", "Preparando oferta", "Enviada", "Adjudicada", "Perdida", "Desierta"]
+        for d in defaults:
+            db.session.add(EstadoLicitacion(nombre=d))
+        db.session.commit()
+        estados = EstadoLicitacion.query.order_by(EstadoLicitacion.nombre).all()
+    return [e.nombre for e in estados]
+
 
 # ==========================================
 # RUTAS DE AUTENTICACIÓN
@@ -119,7 +134,7 @@ def index():
     if tipo:
         query = query.filter_by(tipo_servicio=tipo)
     licitaciones = query.order_by(Licitacion.fecha_cierre.asc().nullslast()).all()
-    return render_template("index.html", licitaciones=licitaciones, estados=ESTADOS, tipos=TIPOS_SERVICIO, q=q, estado_sel=estado, tipo_sel=tipo)
+    return render_template("index.html", licitaciones=licitaciones, estados=obtener_estados(), tipos=obtener_tipos(), q=q, estado_sel=estado, tipo_sel=tipo)
 
 @app.route("/nueva", methods=["GET", "POST"])
 @app.route("/editar/<int:id>", methods=["GET", "POST"])
@@ -162,7 +177,7 @@ def form(id=None):
             
         flash("Licitación guardada correctamente", "success")
         return redirect(url_for("detalle", id=lic.id))
-    return render_template("form.html", lic=lic, estados=ESTADOS, tipos=TIPOS_SERVICIO, monedas=MONEDAS)
+    return render_template("form.html", lic=lic, estados=obtener_estados(), tipos=obtener_tipos(), monedas=MONEDAS)
 
 @app.route("/detalle/<int:id>")
 @login_required
@@ -278,7 +293,66 @@ def exportar_excel():
     return Response(output.getvalue(), mimetype="text/csv; charset=utf-8", headers={"Content-Disposition": f"attachment; filename=licitaciones_{date.today().strftime('%Y%m%d')}.csv"})
 
 # ==========================================
-# EMAILS
+# CONFIGURACIÓN (TIPOS Y ESTADOS)
+# ==========================================
+@app.route("/configuracion")
+@login_required
+def configuracion():
+    if current_user.rol != "admin":
+        flash("Solo los administradores pueden acceder a esta sección.", "danger")
+        return redirect(url_for("index"))
+    return render_template("configuracion.html", tipos=TipoServicio.query.order_by(TipoServicio.nombre).all(), estados=EstadoLicitacion.query.order_by(EstadoLicitacion.nombre).all())
+
+@app.route("/configuracion/agregar_tipo", methods=["POST"])
+@login_required
+def agregar_tipo():
+    if current_user.rol != "admin": return redirect(url_for("index"))
+    nombre = request.form.get("nombre", "").strip()
+    if nombre:
+        if not TipoServicio.query.filter_by(nombre=nombre).first():
+            db.session.add(TipoServicio(nombre=nombre))
+            db.session.commit()
+            flash(f"Tipo '{nombre}' agregado.", "success")
+        else:
+            flash("Ese tipo ya existe.", "warning")
+    return redirect(url_for("configuracion"))
+
+@app.route("/configuracion/borrar_tipo/<int:id>", methods=["POST"])
+@login_required
+def borrar_tipo(id):
+    if current_user.rol != "admin": return redirect(url_for("index"))
+    tipo = TipoServicio.query.get_or_404(id)
+    db.session.delete(tipo)
+    db.session.commit()
+    flash("Tipo eliminado.", "info")
+    return redirect(url_for("configuracion"))
+
+@app.route("/configuracion/agregar_estado", methods=["POST"])
+@login_required
+def agregar_estado():
+    if current_user.rol != "admin": return redirect(url_for("index"))
+    nombre = request.form.get("nombre", "").strip()
+    if nombre:
+        if not EstadoLicitacion.query.filter_by(nombre=nombre).first():
+            db.session.add(EstadoLicitacion(nombre=nombre))
+            db.session.commit()
+            flash(f"Estado '{nombre}' agregado.", "success")
+        else:
+            flash("Ese estado ya existe.", "warning")
+    return redirect(url_for("configuracion"))
+
+@app.route("/configuracion/borrar_estado/<int:id>", methods=["POST"])
+@login_required
+def borrar_estado(id):
+    if current_user.rol != "admin": return redirect(url_for("index"))
+    estado = EstadoLicitacion.query.get_or_404(id)
+    db.session.delete(estado)
+    db.session.commit()
+    flash("Estado eliminado.", "info")
+    return redirect(url_for("configuracion"))
+
+# ==========================================
+# EMAILS Y PRUEBAS
 # ==========================================
 def enviar_email_alerta(licitaciones, asunto, mensaje_intro):
     if not licitaciones: return False
@@ -316,61 +390,33 @@ def enviar_alertas():
     exito = enviar_email_alerta(proximas, "🔔 Alerta: Licitaciones por vencer esta semana", f"Tenés <b>{len(proximas)}</b> licitación(es) que cierran en los próximos 7 días.")
     flash(f"Se envió el email con {len(proximas)} licitaciones a {app.config['MAIL_DESTINATARIO']}" if exito else "Error al enviar el email. Revisá la configuración.", "success" if exito else "danger")
     return redirect(url_for("dashboard"))
+
 @app.route("/cargar_pruebas", methods=["POST"])
 @login_required
 def cargar_pruebas():
     if current_user.rol != "admin":
         flash("Solo el administrador puede hacer esto.", "danger")
         return redirect(url_for("dashboard"))
-
     from datetime import date, timedelta
     hoy = date.today()
-
     try:
-        # Borrar si ya existen
         codigos = ["PC-001", "PC-002", "PC-003"]
         Licitacion.query.filter(Licitacion.codigo_interno.in_(codigos)).delete(synchronize_session=False)
         db.session.commit()
-
         ejemplos = [
-            Licitacion(
-                codigo_interno="PC-001", nro_licitacion="YPF-LC-2025-041", cliente="YPF",
-                yacimiento="Loma Campana", provincia="Neuquén", estado="Preparando oferta",
-                tipo_servicio="Instalación corriente impresa", modalidad="Llave en mano",
-                fecha_cierre=hoy + timedelta(days=10), plazo_ejecucion="120 días", moneda="USD",
-                presupuesto_oficial=250000, nuestra_oferta=235000, clausula_ajuste="CAC",
-                forma_pago="30 días FF", servicios_incluidos="Ingeniería, suministro, montaje y puesta en marcha",
-                equipos_requeridos="1 rectificador 50V/30A, 3 lechos de ánodos", normativa="NACE SP0169, ISO 15589",
-                descripcion="Sistema de PC para 3 ductos colectores en Loma Campana",
-                contacto_cliente="Juan Pérez", email_contacto="jperez@ypf.com"
-            ),
-            Licitacion(
-                codigo_interno="PC-002", nro_licitacion="PAE-GSJ-2025-012", cliente="PAE",
-                yacimiento="Golfo San Jorge", provincia="Santa Cruz", estado="Enviada",
-                tipo_servicio="Medición CIPS / DCVG / PCM", fecha_cierre=hoy + timedelta(days=3),
-                moneda="USD", presupuesto_oficial=85000, nuestra_oferta=79000,
-                clausula_ajuste="Sin ajuste", forma_pago="Contado",
-                descripcion="Relevamiento CIPS/DCVG en 45 km de ducto"
-            ),
-            Licitacion(
-                codigo_interno="PC-003", nro_licitacion="VISTA-BPO-2025-007", cliente="Vista Energy",
-                yacimiento="Bajada del Palo Oeste", provincia="Neuquén", estado="En análisis",
-                tipo_servicio="Diseño PC ductos nuevos", fecha_cierre=hoy + timedelta(days=25),
-                moneda="USD", presupuesto_oficial=420000, nuestra_oferta=395000,
-                clausula_ajuste="IPC", forma_pago="30/60/90 días",
-                descripcion="Ingeniería básica y de detalle para PC de ductos nuevos"
-            ),
+            Licitacion(codigo_interno="PC-001", nro_licitacion="YPF-LC-2025-041", cliente="YPF", yacimiento="Loma Campana", provincia="Neuquén", estado="Preparando oferta", tipo_servicio="Instalación corriente impresa", modalidad="Llave en mano", fecha_cierre=hoy + timedelta(days=10), plazo_ejecucion="120 días", moneda="USD", presupuesto_oficial=250000, nuestra_oferta=235000, clausula_ajuste="CAC", forma_pago="30 días FF", servicios_incluidos="Ingeniería, suministro, montaje y puesta en marcha", equipos_requeridos="1 rectificador 50V/30A, 3 lechos de ánodos", normativa="NACE SP0169, ISO 15589", descripcion="Sistema de PC para 3 ductos colectores en Loma Campana", contacto_cliente="Juan Pérez", email_contacto="jperez@ypf.com"),
+            Licitacion(codigo_interno="PC-002", nro_licitacion="PAE-GSJ-2025-012", cliente="PAE", yacimiento="Golfo San Jorge", provincia="Santa Cruz", estado="Enviada", tipo_servicio="Medición CIPS / DCVG / PCM", fecha_cierre=hoy + timedelta(days=3), moneda="USD", presupuesto_oficial=85000, nuestra_oferta=79000, clausula_ajuste="Sin ajuste", forma_pago="Contado", descripcion="Relevamiento CIPS/DCVG en 45 km de ducto"),
+            Licitacion(codigo_interno="PC-003", nro_licitacion="VISTA-BPO-2025-007", cliente="Vista Energy", yacimiento="Bajada del Palo Oeste", provincia="Neuquén", estado="En análisis", tipo_servicio="Diseño PC ductos nuevos", fecha_cierre=hoy + timedelta(days=25), moneda="USD", presupuesto_oficial=420000, nuestra_oferta=395000, clausula_ajuste="IPC", forma_pago="30/60/90 días", descripcion="Ingeniería básica y de detalle para PC de ductos nuevos"),
         ]
-        
         for e in ejemplos:
             db.session.add(e)
         db.session.commit()
         flash("✅ Se cargaron las 3 licitaciones de prueba correctamente.", "success")
         return redirect(url_for("index"))
-    
     except Exception as e:
         db.session.rollback()
         flash(f"❌ Error al cargar: {str(e)}", "danger")
         return redirect(url_for("dashboard"))
+
 if __name__ == "__main__":
     app.run(debug=True)
