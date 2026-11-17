@@ -110,3 +110,15 @@ class Usuario(UserMixin, db.Model):
     @property
     def is_active(self):
         return self.activo
+
+
+class Historial(db.Model):
+    __tablename__ = "historial"
+    id = db.Column(db.Integer, primary_key=True)
+    licitacion_id = db.Column(db.Integer, db.ForeignKey("licitaciones.id"), nullable=False)
+    usuario = db.Column(db.String(100), nullable=False)
+    accion = db.Column(db.String(100), nullable=False)
+    detalle = db.Column(db.Text)
+    fecha = db.Column(db.DateTime, default=datetime.utcnow)
+
+    licitacion = db.relationship("Licitacion", backref=db.backref("historial", cascade="all, delete-orphan", order_by="Historial.fecha.desc()"))
