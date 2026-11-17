@@ -5,6 +5,11 @@
   <form method="post" action="{{ url_for('enviar_alertas') }}">
     <button class="btn btn-outline-danger">
       <i class="bi bi-envelope-paper"></i> Probar Envío de Alertas (≤7 días)
+      <form method="post" action="{{ url_for('cargar_pruebas') }}" class="d-inline me-2">
+    <button class="btn btn-outline-primary">
+      <i class="bi bi-database-add"></i> Cargar Datos de Prueba
+    </button>
+</form>
     </button>
   </form>
 </div>
